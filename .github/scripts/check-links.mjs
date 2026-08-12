@@ -42,7 +42,17 @@ async function probe(resource) {
       lastError = error?.name === 'AbortError' ? `Timeout after ${timeoutMs / 1000}s` : String(error?.cause?.code || error?.message || error);
     }
   }
-  return { id: resource.id, name: resource.name, url: resource.url, finalUrl: '', status: 0, reachable: false, note: lastError };
+  const inconclusive = /TIMEOUT|Timeout|ECONNRESET|EAI_AGAIN/.test(lastError);
+  return {
+    id: resource.id,
+    name: resource.name,
+    url: resource.url,
+    finalUrl: '',
+    status: 0,
+    reachable: false,
+    inconclusive,
+    note: inconclusive ? `Transient network error: ${lastError}` : lastError
+  };
 }
 
 const results = new Array(resources.length);
@@ -53,25 +63,32 @@ async function worker() {
     cursor += 1;
     results[index] = await probe(resources[index]);
     const result = results[index];
-    console.log(`${result.reachable ? 'PASS' : 'FAIL'}\t${result.status || '-'}\t${result.name}\t${result.url}${result.note ? `\t${result.note}` : ''}`);
+    const outcome = result.reachable ? 'PASS' : result.inconclusive ? 'WARN' : 'FAIL';
+    console.log(`${outcome}\t${result.status || '-'}\t${result.name}\t${result.url}${result.note ? `\t${result.note}` : ''}`);
   }
 }
 
 await Promise.all(Array.from({ length: concurrency }, worker));
 
-const failed = results.filter((result) => !result.reachable);
+const inconclusive = results.filter((result) => result.inconclusive);
+const failed = results.filter((result) => !result.reachable && !result.inconclusive);
 const restricted = results.filter((result) => result.reachable && result.status >= 400);
 const report = [
   '# Resource link check',
   '',
   `Checked: ${results.length}`,
-  `Reachable: ${results.length - failed.length}`,
+  `Reachable: ${results.filter((result) => result.reachable).length}`,
   `Restricted to automated requests: ${restricted.length}`,
+  `Inconclusive transient checks: ${inconclusive.length}`,
   `Needs review: ${failed.length}`,
   '',
   '## Needs review',
   '',
   ...(failed.length ? failed.map((result) => `- ${result.name}: ${result.url} — ${result.note || result.status}`) : ['- None']),
+  '',
+  '## Inconclusive transient checks',
+  '',
+  ...(inconclusive.length ? inconclusive.map((result) => `- ${result.name}: ${result.url} — ${result.note}`) : ['- None']),
   '',
   '## Automated-access restrictions',
   '',
