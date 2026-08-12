@@ -6,6 +6,7 @@ A curated, searchable index of molecular biology databases and online tools, wit
 
 - 118 resources organized into 10 categories
 - Relevance-ranked full-text search and live suggestions
+- Multi-select A–Z initial filter with one-click clearing
 - Expandable descriptions and method tags
 - External links open in a new tab
 - Responsive desktop and mobile layout
