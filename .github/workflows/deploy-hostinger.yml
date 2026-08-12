@@ -1,0 +1,52 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-hostinger-navigator
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}" > ~/.ssh/hostinger_key
+          chmod 600 ~/.ssh/hostinger_key
+          ssh-keyscan -p 65002 -H 37.44.245.124 >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy static site to Hostinger
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -az \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'README.md' \
+            --exclude '.nojekyll' \
+            -e "ssh -i ~/.ssh/hostinger_key -p 65002" \
+            ./ \
+            u921054797@37.44.245.124:/home/u921054797/domains/nanliulab.com/public_html/navigator/
+
+      - name: Verify deployed index
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/hostinger_key -p 65002 \
+            u921054797@37.44.245.124 \
+            'test -f /home/u921054797/domains/nanliulab.com/public_html/navigator/index.html'
