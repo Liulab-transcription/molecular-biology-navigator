@@ -43,10 +43,23 @@ jobs:
             ./ \
             u921054797@37.44.245.124:/home/u921054797/domains/nanliulab.com/public_html/navigator/
 
-      - name: Verify deployed index
+      - name: Verify deployed files
         shell: bash
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/hostinger_key -p 65002 \
             u921054797@37.44.245.124 \
-            'test -f /home/u921054797/domains/nanliulab.com/public_html/navigator/index.html'
+            "grep -Fq 'id=\"alphabet\"' /home/u921054797/domains/nanliulab.com/public_html/navigator/index.html && grep -Fq 'class=\"suggestion ' /home/u921054797/domains/nanliulab.com/public_html/navigator/assets/app.js"
+
+      - name: Verify public website
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --retry 5 --retry-delay 5 \
+            "https://navigator.nanliulab.com/?deploy=${GITHUB_SHA}" \
+            -o /tmp/navigator-index.html
+          curl -fsS --retry 5 --retry-delay 5 \
+            "https://navigator.nanliulab.com/assets/app.js?deploy=${GITHUB_SHA}" \
+            -o /tmp/navigator-app.js
+          grep -Fq 'id="alphabet"' /tmp/navigator-index.html
+          grep -Fq 'class="suggestion ' /tmp/navigator-app.js
