@@ -1,0 +1,29 @@
+name: Check resource links
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - assets/resources.js
+      - .github/scripts/check-links.mjs
+      - .github/workflows/check-links.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Check every resource URL
+        run: node .github/scripts/check-links.mjs
+      - name: Upload link report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-link-check
+          path: link-check-report.md
