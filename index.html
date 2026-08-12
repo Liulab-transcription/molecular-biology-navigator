@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="A curated, searchable index of trusted databases and tools for transcription, epigenetics, proteins and molecular biology.">
+  <title>Molecular Biology Research Navigator</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <a class="brand" href="#top"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>Molecular Biology Research Navigator</span></a>
+      <nav><a href="#index">Browse</a><a href="#about">About</a><a class="total" href="#index"><span data-resource-count></span> resources</a></nav>
+    </header>
+
+    <section class="hero" id="top"><div class="wrap hero-wrap">
+      <p class="eyebrow">Curated research index</p>
+      <h1>Molecular Biology<br>Research Navigator</h1>
+      <p class="intro">Trusted databases and tools for transcription, epigenetics, proteins and molecular biology.</p>
+      <div class="search-wrap">
+        <div class="search">
+          <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.4 15.4 5 5"></path></svg></span>
+          <input id="mbrn-search" type="search" placeholder="Search resources, functions, methods…" autocomplete="off" role="combobox" aria-controls="mbrn-suggestions" aria-autocomplete="list" aria-expanded="false">
+          <button class="clear" type="button" hidden>Clear</button><kbd>⌘ K</kbd>
+          <button class="search-button" type="button" aria-label="Show results"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.4 15.4 5 5"></path></svg></button>
+        </div>
+        <div class="suggestions" id="mbrn-suggestions" hidden></div>
+      </div>
+      <div class="chips" aria-label="Resource categories"></div>
+    </div></section>
+
+    <section class="wrap featured"><div class="heading"><div><p class="kicker"><i></i> Editor's starting points</p><h2>Featured resources</h2></div><a href="#index">View all resources <span aria-hidden="true">→</span></a></div><div class="grid" id="featured-grid"></div></section>
+
+    <section class="wrap index" id="index">
+      <div class="heading index-heading"><div><p class="eyebrow">Research toolkit</p><h2 id="index-title">Browse the complete index</h2></div><span class="badge" id="result-count"></span></div>
+      <div id="resource-content"></div>
+    </section>
+
+    <footer class="wrap" id="about"><div><strong>Molecular Biology Research Navigator</strong><p>A curated, searchable index for everyday experimental and computational research.</p></div><div><b>About click counts</b><p>Counts stay in this browser under stable resource IDs, so page updates and new links do not reset them on the same device and domain.</p></div><a href="#top">Back to top ↑</a></footer>
+  </main>
+  <script src="assets/resources.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
