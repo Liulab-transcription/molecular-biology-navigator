@@ -3,8 +3,9 @@
   var resources = window.MBRN_RESOURCES || [];
   var STORE = 'mbrn-clicks-v1';
   var categories = ['Transcription & Epigenetics','Expression & Single Cell','Proteins & Interactions','Genome Editing & Molecular Tools','Genomes & Browsers','Enrichment & Pathways','3D Genome & Imaging','Condensates & Disorder','Cancer & Screens','Data Repositories & Analysis'];
+  var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   var featuredIds = ['gtex','jaspar','encode','uniprot','depmap','enrichr'];
-  var state = { query:'', category:'All resources', clicks:{}, expanded:new Set(), focused:false, active:0 };
+  var state = { query:'', category:'All resources', letters:new Set(), clicks:{}, expanded:new Set(), focused:false, active:0 };
   var input = document.getElementById('mbrn-search');
   var suggestions = document.getElementById('mbrn-suggestions');
   var featured = document.querySelector('.featured');
@@ -12,6 +13,9 @@
   var title = document.getElementById('index-title');
   var resultCount = document.getElementById('result-count');
   var chips = document.querySelector('.chips');
+  var alphabet = document.getElementById('alphabet');
+  var clearLetters = document.getElementById('clear-letters');
+  var alphaStatus = document.getElementById('alpha-status');
 
   try { state.clicks = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { state.clicks = {}; }
   document.querySelectorAll('[data-resource-count]').forEach(function (node) { node.textContent = resources.length; });
@@ -27,8 +31,9 @@
     tokens.forEach(function(token){if(!all.includes(token))return;matched++;[55,34,28,22,18,12].forEach(function(w,i){if(fields[i].includes(token))total+=w;});});
     if(matched===tokens.length)total+=80; return matched?total:0;
   }
+  function matchesInitial(resource) { return !state.letters.size||state.letters.has(resource.name.trim().charAt(0).toUpperCase()); }
   function ranked() {
-    return resources.map(function(r){return {r:r,s:score(r,state.query)};}).filter(function(x){return (state.category==='All resources'||x.r.category===state.category)&&x.s>0;}).sort(function(a,b){return norm(state.query)?b.s-a.s||a.r.name.localeCompare(b.r.name):a.r.name.localeCompare(b.r.name);});
+    return resources.map(function(r){return {r:r,s:score(r,state.query)};}).filter(function(x){return (state.category==='All resources'||x.r.category===state.category)&&matchesInitial(x.r)&&x.s>0;}).sort(function(a,b){return norm(state.query)?b.s-a.s||a.r.name.localeCompare(b.r.name):a.r.name.localeCompare(b.r.name);});
   }
   function refreshCount(id) { var value=state.clicks[id]||0;document.querySelectorAll('[data-card="'+id+'"] .clicks').forEach(function(node){node.innerHTML='<i></i>'+value+' '+(value===1?'click':'clicks');}); }
   function saveClick(id) { state.clicks[id]=(state.clicks[id]||0)+1; try{localStorage.setItem(STORE,JSON.stringify(state.clicks));}catch{} refreshCount(id); }
@@ -41,15 +46,16 @@
     scope.querySelectorAll('[data-visit]').forEach(function(link){link.addEventListener('click',function(){saveClick(link.dataset.visit);});});
     scope.querySelectorAll('[data-toggle]').forEach(function(button){button.addEventListener('click',function(){var id=button.dataset.toggle;if(state.expanded.has(id)){state.expanded.delete(id);}else{state.expanded.add(id);}render();});});
   }
+  function renderAlphabet(){var selected=Array.from(state.letters).sort();alphabet.innerHTML=letters.map(function(letter){var active=state.letters.has(letter);return '<button type="button" class="'+(active?'active':'')+'" data-letter="'+letter+'" aria-pressed="'+active+'" aria-label="'+(active?'Remove':'Show')+' resources starting with '+letter+'">'+letter+'</button>';}).join('');alphaStatus.textContent=selected.length?'Selected: '+selected.join(', '):'All initials';clearLetters.disabled=!selected.length;alphabet.querySelectorAll('button').forEach(function(button){button.addEventListener('click',function(){var letter=button.dataset.letter;if(state.letters.has(letter)){state.letters.delete(letter);}else{state.letters.add(letter);}state.active=0;render();});});}
   function renderChips(){chips.innerHTML=['All resources'].concat(categories).map(function(c){return '<button type="button" class="'+(state.category===c?'active':'')+'" data-category="'+esc(c)+'">'+esc(c)+'</button>';}).join('');chips.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){state.category=b.dataset.category;state.active=0;render();document.getElementById('index').scrollIntoView({behavior:'smooth'});});});}
   function renderFeatured(){var items=featuredIds.map(function(id){return resources.find(function(r){return r.id===id;});}).filter(Boolean);document.getElementById('featured-grid').innerHTML=items.map(card).join('');bindCards(document.getElementById('featured-grid'));}
-  function renderContent(){var list=ranked();featured.hidden=Boolean(norm(state.query))||state.category!=='All resources';title.textContent=norm(state.query)?'Search results for “'+state.query.trim()+'”':state.category==='All resources'?'Browse the complete index':state.category;resultCount.textContent=(norm(state.query)||state.category!=='All resources'?list.length:resources.length)+' resources';
-    if(norm(state.query)||state.category!=='All resources'){content.innerHTML=list.length?'<div class="grid">'+list.map(function(x){return card(x.r);}).join('')+'</div>':'<div class="empty">No resources matched. <button type="button" id="clear-all">Clear search</button></div>';}
+  function renderContent(){var list=ranked(),selected=Array.from(state.letters).sort(),filtered=Boolean(norm(state.query))||state.category!=='All resources'||selected.length;featured.hidden=filtered;if(norm(state.query)){title.textContent='Search results for “'+state.query.trim()+'”';}else if(state.category!=='All resources'&&selected.length){title.textContent=state.category+' · Initials '+selected.join(', ');}else if(state.category!=='All resources'){title.textContent=state.category;}else if(selected.length){title.textContent='Resources starting with '+selected.join(', ');}else{title.textContent='Browse the complete index';}resultCount.textContent=(filtered?list.length:resources.length)+' resources';
+    if(filtered){content.innerHTML=list.length?'<div class="grid">'+list.map(function(x){return card(x.r);}).join('')+'</div>':'<div class="empty">No resources matched the current filters. <button type="button" id="clear-all">Clear all filters</button></div>';}
     else{content.innerHTML='<div class="groups">'+categories.map(function(c){var items=resources.filter(function(r){return r.category===c;}).sort(function(a,b){return a.name.localeCompare(b.name);});return '<section><div class="category-heading"><h3>'+esc(c)+'</h3><button type="button" data-category-jump="'+esc(c)+'">'+items.length+' resources '+arrow()+'</button></div><div class="grid">'+items.map(card).join('')+'</div></section>';}).join('')+'</div>';}
-    bindCards(content);var clear=document.getElementById('clear-all');if(clear)clear.addEventListener('click',function(){state.query='';state.category='All resources';input.value='';render();});content.querySelectorAll('[data-category-jump]').forEach(function(b){b.addEventListener('click',function(){state.category=b.dataset.categoryJump;render();document.getElementById('index').scrollIntoView({behavior:'smooth'});});});
+    bindCards(content);var clear=document.getElementById('clear-all');if(clear)clear.addEventListener('click',function(){state.query='';state.category='All resources';state.letters.clear();input.value='';render();});content.querySelectorAll('[data-category-jump]').forEach(function(b){b.addEventListener('click',function(){state.category=b.dataset.categoryJump;render();document.getElementById('index').scrollIntoView({behavior:'smooth'});});});
   }
   function renderSuggestions(){var list=norm(state.query)?ranked().slice(0,8):[];input.setAttribute('aria-expanded',String(state.focused&&list.length>0));if(!state.focused||!norm(state.query)){suggestions.hidden=true;return;}suggestions.hidden=false;if(!list.length){suggestions.innerHTML='<div class="none">No match. Try a method, molecule or biological system.</div>';return;}suggestions.innerHTML='<p>Best matches</p>'+list.map(function(x,i){return '<button type="button" class="'+(i===state.active?'active':'')+'" data-suggestion="'+esc(x.r.id)+'"><span><strong>'+esc(x.r.name)+'</strong><small>'+esc(x.r.summary)+'</small></span><em>'+esc(x.r.category)+'</em></button>';}).join('')+'<button type="button" class="all-results">Show all '+ranked().length+' matches '+arrow()+'</button>';suggestions.querySelectorAll('[data-suggestion]').forEach(function(b,i){b.addEventListener('mouseenter',function(){state.active=i;renderSuggestions();});b.addEventListener('mousedown',function(e){e.preventDefault();});b.addEventListener('click',function(){var resource=resources.find(function(r){return r.id===b.dataset.suggestion;});if(resource){saveClick(resource.id);window.open(resource.url,'_blank','noopener,noreferrer');}});});suggestions.querySelector('.all-results').addEventListener('mousedown',function(e){e.preventDefault();});suggestions.querySelector('.all-results').addEventListener('click',function(){document.getElementById('index').scrollIntoView({behavior:'smooth'});});}
-  function render(){renderChips();renderFeatured();renderContent();renderSuggestions();document.querySelector('.clear').hidden=!state.query;document.querySelector('.search kbd').hidden=Boolean(state.query);announceHeight();}
+  function render(){renderAlphabet();renderChips();renderFeatured();renderContent();renderSuggestions();document.querySelector('.clear').hidden=!state.query;document.querySelector('.search kbd').hidden=Boolean(state.query);announceHeight();}
   function announceHeight(){requestAnimationFrame(function(){parent.postMessage({type:'mbrn-height',height:document.documentElement.scrollHeight},'*');});}
 
   input.addEventListener('input',function(){state.query=input.value;state.active=0;render();});
@@ -57,6 +63,7 @@
   input.addEventListener('blur',function(){setTimeout(function(){state.focused=false;document.querySelector('.search').classList.remove('focused');renderSuggestions();},140);});
   input.addEventListener('keydown',function(e){var list=ranked().slice(0,8);if(!list.length)return;if(e.key==='ArrowDown'){e.preventDefault();state.active=Math.min(state.active+1,list.length-1);renderSuggestions();}else if(e.key==='ArrowUp'){e.preventDefault();state.active=Math.max(state.active-1,0);renderSuggestions();}else if(e.key==='Enter'){e.preventDefault();var resource=list[state.active].r;saveClick(resource.id);window.open(resource.url,'_blank','noopener,noreferrer');}else if(e.key==='Escape'){input.blur();}});
   document.querySelector('.clear').addEventListener('click',function(){state.query='';input.value='';input.focus();render();});
+  clearLetters.addEventListener('click',function(){state.letters.clear();state.active=0;render();});
   document.querySelector('.search-button').addEventListener('click',function(){document.getElementById('index').scrollIntoView({behavior:'smooth'});});
   window.addEventListener('keydown',function(e){if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();input.focus();}});
   window.addEventListener('storage',function(e){if(e.key===STORE&&e.newValue)try{state.clicks=JSON.parse(e.newValue);render();}catch{}});
