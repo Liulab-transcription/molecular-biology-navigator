@@ -58,7 +58,7 @@
   function render(){renderAlphabet();renderChips();renderFeatured();renderContent();renderSuggestions();document.querySelector('.clear').hidden=!state.query;document.querySelector('.search kbd').hidden=Boolean(state.query);announceHeight();}
   function announceHeight(){requestAnimationFrame(function(){parent.postMessage({type:'mbrn-height',height:document.documentElement.scrollHeight},'*');});}
 
-  input.addEventListener('input',function(){state.query=input.value;state.active=0;render();});
+  input.addEventListener('input',function(){state.focused=true;state.query=input.value;state.active=0;document.querySelector('.search').classList.add('focused');render();});
   input.addEventListener('focus',function(){state.focused=true;document.querySelector('.search').classList.add('focused');renderSuggestions();});
   input.addEventListener('blur',function(){setTimeout(function(){state.focused=false;document.querySelector('.search').classList.remove('focused');renderSuggestions();},140);});
   input.addEventListener('keydown',function(e){var list=ranked().slice(0,8);if(!list.length)return;if(e.key==='ArrowDown'){e.preventDefault();state.active=Math.min(state.active+1,list.length-1);renderSuggestions();}else if(e.key==='ArrowUp'){e.preventDefault();state.active=Math.max(state.active-1,0);renderSuggestions();}else if(e.key==='Enter'){e.preventDefault();var resource=list[state.active].r;saveClick(resource.id);window.open(resource.url,'_blank','noopener,noreferrer');}else if(e.key==='Escape'){input.blur();}});
@@ -69,9 +69,12 @@
   window.addEventListener('storage',function(e){if(e.key===STORE&&e.newValue)try{state.clicks=JSON.parse(e.newValue);render();}catch{}});
   if('ResizeObserver' in window)new ResizeObserver(announceHeight).observe(document.documentElement);
   render();
-  if (!location.hash) {
-    requestAnimationFrame(function () {
-      input.focus({ preventScroll: true });
-    });
-  }
+  requestAnimationFrame(function () {
+    if (!location.hash) input.focus({ preventScroll: true });
+    if (document.activeElement === input) {
+      state.focused = true;
+      document.querySelector('.search').classList.add('focused');
+      renderSuggestions();
+    }
+  });
 }());
