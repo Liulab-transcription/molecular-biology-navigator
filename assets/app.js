@@ -69,4 +69,9 @@
   window.addEventListener('storage',function(e){if(e.key===STORE&&e.newValue)try{state.clicks=JSON.parse(e.newValue);render();}catch{}});
   if('ResizeObserver' in window)new ResizeObserver(announceHeight).observe(document.documentElement);
   render();
+  if (!location.hash) {
+    requestAnimationFrame(function () {
+      input.focus({ preventScroll: true });
+    });
+  }
 }());
