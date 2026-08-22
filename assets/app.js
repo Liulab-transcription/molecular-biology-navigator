@@ -2,9 +2,9 @@
   'use strict';
   var resources = window.MBRN_RESOURCES || [];
   var STORE = 'mbrn-clicks-v1';
-  var categories = ['Transcription & Epigenetics','Expression & Single Cell','Proteins & Interactions','Genome Editing & Molecular Tools','Genomes & Browsers','Enrichment & Pathways','3D Genome & Imaging','Condensates & Disorder','Cancer & Screens','Data Repositories & Analysis'];
+  var categories = ['Transcription & Epigenetics','Expression & Single Cell','Proteins & Interactions','Genome Editing & Molecular Tools','Genomes & Browsers','Enrichment & Pathways','3D Genome & Imaging','Condensates & Disorder','Cancer & Screens','Data Repositories & Analysis','AI Research Agents'];
   var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  var featuredIds = ['gtex','jaspar','encode','uniprot','depmap','enrichr'];
+  var featuredIds = ['gtex','jaspar','encode','factorbook','uniprot','depmap','enrichr'];
   var state = { query:'', category:'All resources', letters:new Set(), clicks:{}, expanded:new Set(), focused:false, active:0 };
   var input = document.getElementById('mbrn-search');
   var suggestions = document.getElementById('mbrn-suggestions');
